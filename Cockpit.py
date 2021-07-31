@@ -49,7 +49,7 @@ hub.plot()
 Result = hub.get_dparam(returnas=dict)
 '''
 # #############################################################################
-hub = _core.Hub('GK')
+hub = _core.Hub('GK-newformalism')
 #hub.set_dparam(key='alpha', value=2.5)
 # hub.get_summary()
 hub.run(verb=1.1)

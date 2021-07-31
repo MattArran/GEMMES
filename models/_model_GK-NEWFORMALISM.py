@@ -16,7 +16,6 @@ _DESCRIPTION = """
     LINKTOARTICLE :
     """   # Description that will be shown when the user load the model or browse through models
 
-_DPARAM = {}  # SHOULD BE REMOVED WITH NEWFORMALISM
 
 # ---------------------------
 # user-defined model
@@ -35,6 +34,7 @@ _LOGICS = {
         'K': {
             'logic': lambda I=0, itself=0, delta=0: I - itself * delta,
             'com': 'Capital evolution from investment and depreciation',
+            'initial': 4,
         },
         'D': {
             'logic': lambda I=0, Pi=0: I - Pi,
@@ -51,7 +51,7 @@ _LOGICS = {
     },
 
     # Intermediary relevant functions
-    'func': {
+    'statevar': {
         'Y': {
             'logic': lambda K=0, nu=1: K / nu,
             'com': 'Leontiev optimized production function ',
