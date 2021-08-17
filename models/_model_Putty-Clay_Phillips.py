@@ -40,17 +40,17 @@ _PRESETS = {
         'fields': {
             'delta': 0.05,
             'beta': 0.,
-            'tau': 0.5,
             's_p': 1,
             's_w': 0,
             'kl_sigma': 0.1,
             'kl_ratios': geom_kl_ratios,
+            'phinull': 1./6.,
             'N': 6e6,
             'w': 5e4,
             'labor_density': (5 / (10**0.05 - 1)
-                              * np.where(np.abs(geom_kl_ratios / 1e6 - 1) < 0.025, 1, 0)),
+                              * np.where(np.abs(np.log10(geom_kl_ratios / 1e6)) < 0.025, 1, 0)),
         },
-        'com': "System close to a Solow point, to which it rapidly converges",
+        'com': "System close to a Solow point, to which it slowly converges",
         'plots': [],
     },
     
@@ -58,11 +58,11 @@ _PRESETS = {
         'fields': {
             'delta': 0.05,
             'beta': 0.,
-            'tau': 0.5,
             's_p': 1,
             's_w': 0,
             'kl_sigma': 0.1,
             'kl_ratios': geom_kl_ratios,
+            'phinull': 1./6.,
             'N': 6e6,
             'w': 5e3,
             'labor_density': 1e6 * np.exp(-0.5 * (np.log(geom_kl_ratios / 1e4) 
@@ -114,31 +114,23 @@ def total_production(id_kl_min=0, productivity_fn=np.arange(n_kl),
 def total_labor(id_kl_min=0, labor_density=np.ones(n_kl),
                 kl_ratios=np.arange(1, n_kl + 1)):
     if np.isscalar(id_kl_min):
-        return (labor_density[id_kl_min:-1] * np.diff(kl_ratios[id_kl_min:])).sum()
+        return (labor_density[id_kl_min:-1] * np.diff(kl_ratios)).sum()
     ltl = [(ld[i:-1] * np.diff(kl_ratios[i:])).sum()
            for i, ld in zip(id_kl_min.astype(int), labor_density)]
     return np.array(ltl)
 
-def mean_capital_labor_ratio(labor_density=np.ones(n_kl),
-                             kl_ratios=np.arange(1, n_kl + 1)):
-    if labor_density.shape == kl_ratios.shape:
-        return ((kl_ratios[:-1] * labor_density[:-1] * np.diff(kl_ratios)).sum()
-                / (labor_density[:-1] * np.diff(kl_ratios)).sum())
-    lmclr = [(kl_ratios[:-1] * ld[:-1] * np.diff(kl_ratios)).sum()
-             / (ld[:-1] * np.diff(kl_ratios)).sum() for ld in labor_density]
-    return np.array(lmclr)
 
 _DPARAM = {
     # ---------
     # exogenous parameters
     # can also have a time variation (just replace by a function of time)
     # useful for studying the model's reaction to an exogenous shock
-    'Tmax' : 20,
+    'Tmax' : 500,
     'delta': 0.05,
     'beta': 0.,
-    'tau': 0.5,
     's_p': 1,
     's_w': 0,
+    'phinull': 1./6.,
     'kl_sigma': 0.1,
     'kl_ratios': geom_kl_ratios,
 
@@ -152,14 +144,15 @@ _DPARAM = {
         'eqtype': 'ode',
     },
     'w': {
-        'func': lambda L=0, N=1, itself=0, tau=1: (w0 * L / (N - L) - itself) / tau,
+        'func': lambda itself=0, phillips=0: itself * phillips,
         'initial': 5e3,
         'eqtype': 'ode',
     },
     # differential equations (pde)
     'labor_density': {
         'func': del_t_labor_density,
-        'initial': 1e6 * np.exp(-0.5 * (np.log(geom_kl_ratios / 1e4) / np.log(2))**2) / geom_kl_ratios,
+        'initial': 1e6 * np.exp(-0.5 * (np.log(geom_kl_ratios / 1e4) 
+                                        / np.log(2))**2) / geom_kl_ratios,
         'eqtype': 'pde',
     },
 
@@ -196,13 +189,21 @@ _DPARAM = {
         'func': lambda s_p=1, s_w=0, Pi=0, w=0, L=0: s_p * Pi + s_w * w * L,
         'eqtype': 'intermediary',
     },
+    'phillips': {
+        'func': lambda phi0=0, phi1=0, L=0, N=1: -phi0 + phi1 / (1 - L / N)**2,
+        'eqtype': 'intermediary',
+    },
+    'phi0': {
+        'func': lambda phinull=0: phinull / (1 - phinull**2),
+        'eqtype': 'auxiliary',
+    },
+    'phi1': {
+        'func': lambda phinull=0: phinull**3 / (1 - phinull**2),
+        'eqtype': 'auxiliary',
+    },
 
     # auxiliary, not used for computation but for interpretation
     # => typically computed at the end after the computation
-    'kl_bar': {
-        'func': mean_capital_labor_ratio, 
-        'eqtype': 'auxiliary',
-    },
     'lambda': {
         'func': lambda L=0, N=1: L / N,
         'eqtype': 'auxiliary',

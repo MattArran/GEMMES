@@ -331,6 +331,15 @@ _DFIELDS = {
         'symbol': r'$k_{opt}$',
         'group': 'Putty-Clay',
     },
+    'kl_bar': {
+        'value': 0,
+        'com': 'Mean available capital-labor ratio',
+        'dimension': 'Capital-labor ratio',
+        'units': 'Dollars Humans^{-1}',
+        'type': 'intensive',
+        'symbol': r'$\bar{k}$',
+        'group': 'Putty-Clay',
+    },
     'kl_sigma': {
         'value': 0.1,
         'com': 'Spread of investment around optimal capital-labor ratio',

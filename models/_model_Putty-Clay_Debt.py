@@ -41,8 +41,9 @@ _PRESETS = {
             'delta': 0.05,
             'beta': 0.,
             'tau': 0.5,
-            's_p': 1,
-            's_w': 0,
+            's_p': 0.25,
+            's_w': 0.25,
+            'r': 0.05,
             'kl_sigma': 0.1,
             'kl_ratios': geom_kl_ratios,
             'N': 6e6,
@@ -128,7 +129,7 @@ _DPARAM = {
     },
     'w': {
         'func': lambda L=0, N=1, itself=0, tau=1: (w0 * L / (N - L) - itself) / tau,
-        'initial': 1e5,
+        'initial': 5e4,
         'eqtype': 'ode',
     },
     'D': {
@@ -169,7 +170,7 @@ _DPARAM = {
         'eqtype': 'intermediary',
     },
     'Pi': {
-        'func': lambda GDP=0, w=0, L=0: GDP - w * L - r * D,
+        'func': lambda GDP=0, w=0, L=0, r=0, D=0: GDP - w * L - r * D,
         'eqtype': 'intermediary',
     },
     'I': {
