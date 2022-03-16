@@ -14,8 +14,9 @@ All parameters can have value:
 
 import numpy as np
 
-n_kl = 501
-geom_kl_ratios = 10**np.linspace(3, 8, n_kl)
+l_kl_min, l_kl_max, n_kl = 3., 8., 1001
+dl_kl = (l_kl_max - l_kl_min) / n_kl
+geom_kl_ratios = 10**np.linspace(l_kl_min, l_kl_max, n_kl)
 w0, f_prefix, n = 1e4, 100, 0.5
                    
 # ---------------------------
@@ -29,7 +30,7 @@ _DESCRIPTION = """
         In this version, wages converge to w0 L / (N - L) for w0 = $10k / yr,
         while labor productivity on a machine with capital-labor ratio k is
         f(k) = f0 (k/k0)^n for f0 = $10k / human yr, k0 = $10k / human, n = 1/2
-    TYPICAL BEHAVIOUR: Decaying oscillations around a Solow point (?)
+    TYPICAL BEHAVIOUR: Decaying oscillations around a Solow point
     LINKTOARTICLE: Akerlof, G. A. and Stiglitz, J. E., 1969. 'Capital, Wages
         and Structural Unemployment', The Economic Journal, Vol. 79, No. 314
         http://www.jstor.org/stable/2230168
@@ -47,8 +48,8 @@ _PRESETS = {
             'kl_ratios': geom_kl_ratios,
             'N': 6e6,
             'w': 5e4,
-            'labor_density': (5 / (10**0.05 - 1)
-                              * np.where(np.abs(geom_kl_ratios / 1e6 - 1) < 0.025, 1, 0)),
+            'labor_density': (5 / (10**dl_kl - 1)
+                              * np.where(np.abs(np.log(geom_kl_ratios / 1e6)) <= 0.5 * dl_kl, 1, 0)),
         },
         'com': "System close to a Solow point, to which it rapidly converges",
         'plots': [],
@@ -65,8 +66,9 @@ _PRESETS = {
             'kl_ratios': geom_kl_ratios,
             'N': 6e6,
             'w': 5e3,
-            'labor_density': 1e6 * np.exp(-0.5 * (np.log(geom_kl_ratios / 1e4) 
-                                                  / np.log(2))**2) / geom_kl_ratios,
+            'labor_density': (1e6 / (np.log(2) * geom_kl_ratios * np.sqrt(2 * np.pi))
+                              * np.exp(-0.5 * (np.log(geom_kl_ratios / 1e4) 
+                                               / np.log(2))**2)),
         },
         'com': "System develops from a labor-intensive, low-wage start point",
         'plots': [],
@@ -136,7 +138,7 @@ _DPARAM = {
     'Tmax' : 20,
     'delta': 0.05,
     'beta': 0.,
-    'tau': 0.5,
+    'tau': 1.0,
     's_p': 1,
     's_w': 0,
     'kl_sigma': 0.1,
@@ -153,13 +155,14 @@ _DPARAM = {
     },
     'w': {
         'func': lambda L=0, N=1, itself=0, tau=1: (w0 * L / (N - L) - itself) / tau,
-        'initial': 5e3,
+        'initial': 5e4,
         'eqtype': 'ode',
     },
     # differential equations (pde)
     'labor_density': {
         'func': del_t_labor_density,
-        'initial': 1e6 * np.exp(-0.5 * (np.log(geom_kl_ratios / 1e4) / np.log(2))**2) / geom_kl_ratios,
+        'initial': (5 / (10**dl_kl - 1)
+                    * np.where(np.abs(np.log(geom_kl_ratios / 1e6)) <= 0.5 * dl_kl, 1, 0)),
         'eqtype': 'pde',
     },
 

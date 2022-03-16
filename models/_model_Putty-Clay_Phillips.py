@@ -14,8 +14,9 @@ All parameters can have value:
 
 import numpy as np
 
-n_kl = 501
-geom_kl_ratios = 10**np.linspace(3, 8, n_kl)
+l_kl_min, l_kl_max, n_kl = 3., 8., 1001
+dl_kl = (l_kl_max - l_kl_min) / n_kl
+geom_kl_ratios = 10**np.linspace(l_kl_min, l_kl_max, n_kl)
 w0, f_prefix, n = 1e4, 100, 0.5
                    
 # ---------------------------
@@ -24,9 +25,9 @@ w0, f_prefix, n = 1e4, 100, 0.5
 _FUNC_ORDER = None
 
 _DESCRIPTION = """
-    DESCRIPTION: Model with wages uniquely determined by unemployment, but with
+    DESCRIPTION: Model with wage growth determined by unemployment and with
         technologies with varying capital-labor ratio, fixed at creation time.
-        In this version, wages converge to w0 L / (N - L) for w0 = $10k / yr,
+        A Phillips curve determines wage inflation phi_1 / (1 - u)**2 - phi_0,
         while labor productivity on a machine with capital-labor ratio k is
         f(k) = f0 (k/k0)^n for f0 = $10k / human yr, k0 = $10k / human, n = 1/2
     TYPICAL BEHAVIOUR: Decaying oscillations around a Solow point (?)
@@ -47,8 +48,8 @@ _PRESETS = {
             'phinull': 1./6.,
             'N': 6e6,
             'w': 5e4,
-            'labor_density': (5 / (10**0.05 - 1)
-                              * np.where(np.abs(np.log10(geom_kl_ratios / 1e6)) < 0.025, 1, 0)),
+            'labor_density': (5 / (10**dl_kl - 1)
+                              * np.where(np.abs(np.log(geom_kl_ratios / 1e6)) <= 0.5 * dl_kl, 1, 0)),
         },
         'com': "System close to a Solow point, to which it slowly converges",
         'plots': [],
@@ -65,8 +66,9 @@ _PRESETS = {
             'phinull': 1./6.,
             'N': 6e6,
             'w': 5e3,
-            'labor_density': 1e6 * np.exp(-0.5 * (np.log(geom_kl_ratios / 1e4) 
-                                                  / np.log(2))**2) / geom_kl_ratios,
+            'labor_density': (1e6 / (np.log(2) * geom_kl_ratios * np.sqrt(2 * np.pi))
+                              * np.exp(-0.5 * (np.log(geom_kl_ratios / 1e4) 
+                                               / np.log(2))**2)),
         },
         'com': "System develops from a labor-intensive, low-wage start point",
         'plots': [],
@@ -104,6 +106,7 @@ def total_production(id_kl_min=0, productivity_fn=np.arange(n_kl),
                      labor_density=np.ones(n_kl),
                      kl_ratios=np.arange(1, n_kl + 1)):
     if np.isscalar(id_kl_min):
+        id_kl_min = int(id_kl_min)
         return (productivity_fn[id_kl_min:-1] * labor_density[id_kl_min:-1]
                 * np.diff(kl_ratios[id_kl_min:])).sum()
     ltp = [(productivity_fn[i:-1] * ld[i:-1] * np.diff(kl_ratios[i:])).sum()
@@ -114,6 +117,7 @@ def total_production(id_kl_min=0, productivity_fn=np.arange(n_kl),
 def total_labor(id_kl_min=0, labor_density=np.ones(n_kl),
                 kl_ratios=np.arange(1, n_kl + 1)):
     if np.isscalar(id_kl_min):
+        id_kl_min = int(id_kl_min)
         return (labor_density[id_kl_min:-1] * np.diff(kl_ratios)).sum()
     ltl = [(ld[i:-1] * np.diff(kl_ratios[i:])).sum()
            for i, ld in zip(id_kl_min.astype(int), labor_density)]
@@ -151,8 +155,9 @@ _DPARAM = {
     # differential equations (pde)
     'labor_density': {
         'func': del_t_labor_density,
-        'initial': 1e6 * np.exp(-0.5 * (np.log(geom_kl_ratios / 1e4) 
-                                        / np.log(2))**2) / geom_kl_ratios,
+        'initial': (1e6 / (np.log(2) * geom_kl_ratios * np.sqrt(2 * np.pi))
+                    * np.exp(-0.5 * (np.log(geom_kl_ratios / 1e4) 
+                             / np.log(2))**2)),
         'eqtype': 'pde',
     },
 

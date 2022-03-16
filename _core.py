@@ -182,8 +182,8 @@ class Hub():
         All other time steps are set to nan
         """
         # Define shape of model system
-        sys_shape = [self.__dparam['nt']['value'],
-                     self.__dparam['nx']['value']]
+        nt = self.__dparam['nt']['value']
+        sys_shape = [nt, self.__dparam['nx']['value']]
         lode = self.get_dparam(eqtype='ode', returnas=list)
         lpde = self.get_dparam(eqtype='pde', returnas=list)
         linter = self.__dmisc['func_order']
@@ -211,12 +211,11 @@ class Hub():
         for k0 in linter + laux:
             # prepare dict of args
             kwdargs = {k1: v1[0] for k1, v1 in self.__dargs[k0].items()}
-            # calculate inital value and use it to initialize the value array
-            initial_value = self.__dparam[k0]['func'](**kwdargs)
-            is_scalar = np.isscalar(initial_value) or initial_value.size == 1
-            var_shape = [] if is_scalar else list(initial_value.shape)
-            self.__dparam[k0]['value'] = np.full(sys_shape + var_shape, np.nan)
-            self.__dparam[k0]['value'][0] = initial_value
+            # calculate inital values and use to initialize the value array
+            initial_values = self.__dparam[k0]['func'](**kwdargs)
+            vars_shape = list(initial_values.shape)
+            self.__dparam[k0]['value'] = np.full([nt] + vars_shape, np.nan)
+            self.__dparam[k0]['value'][0] = initial_values
             # Add references in dict of arguments to newly initialized values,
             # handling any lambda exception here rather than at each time step
             ref = 'lamb' if k0 == 'lambda' else k0
