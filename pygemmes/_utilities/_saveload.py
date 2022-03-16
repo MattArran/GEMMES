@@ -184,17 +184,8 @@ def save(
     # --------------
     # Make full name
     dinclude = {
-<<<<<<< HEAD
-<<<<<<< HEAD:utilities/_saveload.py
-        'model': obj.model['name'].replace('_', '-').replace(' ', '-'),
-=======
         'model': obj.dmodel['name'].replace('_', '-').replace(' ', '-'),
         'preset': obj.dmodel['preset'],
->>>>>>> 80cc16b011a54199d9bac967991a7b45f43247c0:pygemmes/_utilities/_saveload.py
-=======
-        'model': obj.dmodel['name'].replace('_', '-').replace(' ', '-'),
-        'preset': obj.dmodel['preset'],
->>>>>>> 80cc16b011a54199d9bac967991a7b45f43247c0
         'solver': obj.dmisc['solver'],
         'name': name,
         'user': getpass.getuser(),
