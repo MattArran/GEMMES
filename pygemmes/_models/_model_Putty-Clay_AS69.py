@@ -1,35 +1,26 @@
 # -*- coding: utf-8 -*-
 """
-Here we define the parameters and set of equation for a model of type 'Putty-Clay'
-
-All parameters can have value:
-    - None: set to the default value found in _def_fields.py
-    - scalar: int or float
-    - list or np.ndarray used for benchmarks
-    - function (callable): in that can it will be treated as a variable
-                            the function will be called at each time step
-
+DESCRIPTION:    
+    Model with wages uniquely determined by unemployment, but with
+    technologies with varying capital-labor ratio, fixed at creation time
+TYPICAL BEHAVIOUR:
+    Decaying oscillations around a Solow point
+LINKTOARTICLE:
+    Akerlof, G. A. and Stiglitz, J. E., 1969. 'Capital, Wages and Structural
+    Unemployment', The Economic Journal, Vol. 79, No. 314
+    http://www.jstor.org/stable/2230168
+    
+Created on Wed Mar 16 2022
+@author: Matt Arran
 """
 
 
 import numpy as np
+from pygemmes._models import Funcs
 
 n_kl = 101
-kl_ratios = 10**np.linspace(3, 8, n_kl)
+kl_ratios = 10**np.linspace(-2, 2, n_kl)
 
-# ---------------------------
-# user-defined function order (optional)
-
-_FUNC_ORDER = None
-
-_DESCRIPTION = """
-    DESCRIPTION: Model with wages uniquely determined by unemployment, but with
-        technologies with varying capital-labor ratio, fixed at creation time
-    TYPICAL BEHAVIOUR: Decaying oscillations around a Solow point (?)
-    LINKTOARTICLE: Akerlof, G. A. and Stiglitz, J. E., 1969. 'Capital, Wages
-        and Structural Unemployment', The Economic Journal, Vol. 79, No. 314
-        http://www.jstor.org/stable/2230168
-    """
 
 _PRESETS = {}
 # ---------------------------
@@ -79,7 +70,28 @@ def total_labor(id_kl_min=0, labor_density=np.ones(n_kl),
     return np.array(ltl)
 
 
-_DPARAM = {
+_LOGICS = {
+    'ode': {
+        'N': Funcs.Population.exp
+        },
+    'pde': {
+        'labor_density': {
+            'func': del_t_labor_density,
+            'initial': lognormal_distribution(0.1, 0.01, kl_ratios)
+            }
+        },
+    'statevar': {
+        'w': {
+            'func': lambda lamb: lamb / (1 - lamb),
+            'com': "Wages are directly determined by employment"
+            },
+        'productivity_fn': {
+            'func': 
+            }
+        },
+    'param': {}
+    }
+
     # ---------
     # exogenous parameters
     # can also have a time variation (just replace by a function of time)
@@ -92,20 +104,6 @@ _DPARAM = {
     'kl_sigma': 0.1,
     'kl_ratios': kl_ratios,
 
-    # ---------
-    # endogeneous functions
-
-    # differential equations (ode)
-    'N': {
-        'func': lambda beta=0, itself=0: beta * itself,
-        'initial': 6e6,
-        'eqtype': 'ode',
-    },
-    'w': {
-        'func': lambda L=0, N=1, itself=0, tau=1: (1e4 * L / (N - L) - itself) / tau,
-        'initial': 5e4,
-        'eqtype': 'ode',
-    },
     # differential equations (pde)
     'labor_density': {
         'func': del_t_labor_density,
